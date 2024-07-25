@@ -44,13 +44,14 @@ pub fn decode(data: &str) -> String {
         binary_str.push_str(&format!("{table_index:06b}"));
     }
     
-    let mut decoded_str = String::new();
+    let mut bytes = Vec::new();
     for i in 0..(binary_str.len() / 8) {
-        let chunk_8bit = &binary_str[i*8..(i + 1) * 8];
-        let decimal_val = u32::from_str_radix(chunk_8bit, 2).unwrap();
-        decoded_str.push(char::from_u32(decimal_val).unwrap());
-    } 
-    decoded_str
+        let chunk_8bit = &binary_str[i * 8..(i + 1) * 8];
+        let byte = u8::from_str_radix(chunk_8bit, 2).unwrap();
+        bytes.push(byte);
+    }
+
+    String::from_utf8(bytes).unwrap()
 }
 
 #[cfg(test)]
@@ -81,6 +82,16 @@ mod test {
         assert_eq!(
             String::from("XHBvcG9rZXdubXBjITJrc21kU2xta3Ns"),
             encode("\\popokewnmpc!2ksmdSlmksl")
+        );
+
+        assert_eq!(
+            String::from("zqM="),
+            encode("Σ")
+        );
+
+        assert_eq!(
+            String::from("zqPOow=="),
+            encode("ΣΣ")
         );
     }
     
@@ -115,6 +126,16 @@ mod test {
         assert_eq!(
             decode("XHBvcG9rZXdubXBjITJrc21kU2xta3Ns"),
             String::from("\\popokewnmpc!2ksmdSlmksl")
+        );
+
+        assert_eq!(
+            String::from("Σ"),
+            decode("zqM=")
+        );
+
+        assert_eq!(
+            String::from("ΣΣ"),
+            decode("zqPOow==")
         );
     }
     
