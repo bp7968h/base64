@@ -4,54 +4,63 @@ const BASE64_TABLE : [char; 64] = [
 
 
 pub fn encode(data: &str) -> String {
-    let mut binary_str = String::with_capacity(data.len() * 8);
-    for byte in data.bytes(){
-        binary_str.push_str(&format!("{:08b}", byte));
+    let mut bit_vec = vec![];
+    for byte in data.as_bytes() {
+        for i in (0..8).rev() {
+            bit_vec.push((byte >> i) & 1);
+        }
     }
     
-    if binary_str.len() % 6 != 0 {
-        pad_to_by(&mut binary_str, 6, '0');
+    while bit_vec.len() % 6 != 0 {
+        bit_vec.push(0);
     }
     
-    let mut encoded_str = String::new();
-    for i in 0..binary_str.len() / 6 {
-        let chunk = &binary_str[i*6..(i + 1) * 6];
-        let index = usize::from_str_radix(chunk, 2).unwrap();
-        encoded_str.push(BASE64_TABLE[index]);
+    let mut base64_str = String::new();
+    for bits in bit_vec.chunks(6) {
+        let mut num = 0;
+        for &bit in bits {
+            num = (num << 1) | bit;
+        }
+        base64_str.push(BASE64_TABLE[num as usize]);
     }
     
-    if encoded_str.len() % 4 != 0{
-        pad_to_by(&mut encoded_str, 4, '=');
+    while base64_str.len() % 4 != 0 {
+        base64_str.push('=');
     }
     
-    encoded_str
-}
-
-fn pad_to_by(uneven_str: &mut String, to: usize, by: char){
-    while uneven_str.len() % to != 0 {
-        uneven_str.push(by);
-    }
+    base64_str
 }
 
 pub fn decode(data: &str) -> String {
-    let stripped_data = data.trim_end_matches('=');
+    let clean_string = data.trim_end_matches('=');
     
-    let mut binary_str = String::new();
-    for char in stripped_data.chars(){
-        let table_index = BASE64_TABLE.iter().position(|&table_char| {
-            table_char == char
-        }).unwrap();
-        binary_str.push_str(&format!("{table_index:06b}"));
+    let mut bit_vec = Vec::new();
+    for byte in clean_string.as_bytes() {
+        let table_index = BASE64_TABLE.iter().position(|&table_char| table_char == *byte as char).unwrap();
+        for i in (0..6).rev() {
+            bit_vec.push((table_index >> i) & 1);
+        }
     }
     
-    let mut bytes = Vec::new();
-    for i in 0..(binary_str.len() / 8) {
-        let chunk_8bit = &binary_str[i * 8..(i + 1) * 8];
-        let byte = u8::from_str_radix(chunk_8bit, 2).unwrap();
-        bytes.push(byte);
+    let mut byte_vec: Vec<u8> = Vec::new();
+    for bits in bit_vec.chunks(8) {
+        let mut num = 0;
+        for &bit in bits {
+            num = (num << 1) | bit;
+        }
+        byte_vec.push(num as u8);
     }
-
-    String::from_utf8(bytes).unwrap()
+    
+    // Remove any trailing null characters
+    while let Some(&last) = byte_vec.last() {
+        if last == 0 {
+            byte_vec.pop();
+        } else {
+            break;
+        }
+    }
+    
+    String::from_utf8(byte_vec).unwrap()
 }
 
 #[cfg(test)]
