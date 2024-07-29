@@ -18,7 +18,7 @@ use base64::{encode, decode};
 
 fn main() {
     let original = "Hello, world!";
-    let encoded = encode(original);
+    let encoded = encode(original.as_bytes());
     let decoded = decode(&encoded);
 
     println!("Original: {}", original);
@@ -29,7 +29,7 @@ fn main() {
 
 ## Functions
 - **encode**: Encodes a string into Base64 format.
- 1. Parameters: `data: &str` : The input string to encode.
+ 1. Parameters: `data: &[u8]` : The input byte slice to encode.
  2. Returns: `String` : The Base64 encoded string.
 
 - **encode**: Decodes a Base64 string back into the original string.
